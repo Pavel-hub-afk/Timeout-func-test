@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/etnz/permute"
-	"github.com/xuri/excelize/v2"
 )
 
 // ITERATION_LOOP - переменная итераций цикла. Задается с помощью ключа "-i".
@@ -130,45 +129,17 @@ func openDifferentFiles(l int) time.Duration {
 }
 
 // outputFuncDifferentTurn - функция вывода времени выполнения функций в разной последовательностии генерации Excel файла
-func outputFuncDifferentTurn(file *excelize.File) {
-	var indexExcle int = 1
-	var funcTime time.Duration
+func outputFuncDifferentTurn() {
+
 	var allTime time.Duration
 
 	arrayTurn := []string{"P", "W", "R", "O"}
 	fmt.Println(arrayTurn)
 
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), arrayTurn)
-	indexExcle++
-
-	funcTime = printScreen(ITERATION_LOOP)
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Вывод на экран | время: ")
-	file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-	allTime += funcTime
-	indexExcle++
-
-	funcTime = writeFile(ITERATION_LOOP)
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Запись в файл | время: ")
-	file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-	allTime += funcTime
-	indexExcle++
-
-	funcTime = readFile(ITERATION_LOOP)
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Чтение файла | время: ")
-	file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-	allTime += funcTime
-	indexExcle++
-
-	funcTime = openDifferentFiles(ITERATION_LOOP)
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Октрытие файлаов разного типа | время: ")
-	file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-	allTime += funcTime
-	indexExcle++
-
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Общее время выполнения | время: ")
-	file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(allTime))
-	indexExcle++
-	indexExcle++
+	allTime += printScreen(ITERATION_LOOP)
+	allTime += writeFile(ITERATION_LOOP)
+	allTime += readFile(ITERATION_LOOP)
+	allTime += openDifferentFiles(ITERATION_LOOP)
 
 	fmt.Println("All time:", allTime)
 	fmt.Println("------------------------")
@@ -182,45 +153,22 @@ func outputFuncDifferentTurn(file *excelize.File) {
 		permute.SwapStrings(sw, arrayTurn)
 		fmt.Println(arrayTurn)
 
-		file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), arrayTurn)
-		indexExcle++
-
 		for _, value := range arrayTurn {
 			switch value {
 
 			case "P":
-				funcTime = printScreen(ITERATION_LOOP)
-				file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Вывод на экран | время: ")
-				file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-				allTime += funcTime
-				indexExcle++
+				allTime += printScreen(ITERATION_LOOP)
 
 			case "W":
-				funcTime = writeFile(ITERATION_LOOP)
-				file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Запись в файл | время: ")
-				file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-				allTime += funcTime
-				indexExcle++
+				allTime += writeFile(ITERATION_LOOP)
 
 			case "R":
-				funcTime = readFile(ITERATION_LOOP)
-				file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Чтение файла | время: ")
-				file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-				allTime += funcTime
-				indexExcle++
+				allTime += readFile(ITERATION_LOOP)
 
 			case "O":
-				funcTime = openDifferentFiles(ITERATION_LOOP)
-				file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Октрытие файлаов разного типа | время: ")
-				file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(funcTime))
-				allTime += funcTime
-				indexExcle++
+				allTime += openDifferentFiles(ITERATION_LOOP)
 			}
 		}
-		file.SetCellValue("Sheet1", fmt.Sprintf("A%d", indexExcle), "Общее время выполнения | время: ")
-		file.SetCellValue("Sheet1", fmt.Sprintf("B%d", indexExcle), fmt.Sprint(allTime))
-		indexExcle++
-		indexExcle++
 
 		fmt.Println("All time:", allTime)
 		fmt.Println("------------------------")
@@ -231,11 +179,5 @@ func outputFuncDifferentTurn(file *excelize.File) {
 func main() {
 	flag.Parse()
 
-	file := excelize.NewFile()
-
-	outputFuncDifferentTurn(file)
-
-	if err := file.SaveAs("IntermediaTimeFunc.xlsx"); err != nil {
-		fmt.Println(err)
-	}
+	outputFuncDifferentTurn()
 }
