@@ -1,4 +1,4 @@
-// Тест времени выплнения функций в разной последовательности.
+// Тест времени выполнения функций в разной последовательности.
 
 package main
 
@@ -21,7 +21,7 @@ func init() {
 }
 
 // printScreen - функция вывода на экран
-func printScreen(l int) time.Duration {
+func printScreen(l int, channel chan time.Duration) {
 	t0 := time.Now()
 
 	for i := 0; i < l; i++ {
@@ -30,11 +30,11 @@ func printScreen(l int) time.Duration {
 
 	t1 := time.Now()
 	fmt.Println("Function print | time: ", t1.Sub(t0))
-	return t1.Sub(t0)
+	channel <- t1.Sub(t0)
 }
 
 // writeFile - функция записи файла
-func writeFile(l int) time.Duration {
+func writeFile(l int, channel chan time.Duration) {
 	t0 := time.Now()
 
 	for i := 0; i < l; i++ {
@@ -54,11 +54,11 @@ func writeFile(l int) time.Duration {
 
 	t1 := time.Now()
 	fmt.Println("Function write | time: ", t1.Sub(t0))
-	return t1.Sub(t0)
+	channel <- t1.Sub(t0)
 }
 
 // readFile - функция чтения файла
-func readFile(l int) time.Duration {
+func readFile(l int, channel chan time.Duration) {
 	t0 := time.Now()
 
 	for i := 0; i < l; i++ {
@@ -82,11 +82,11 @@ func readFile(l int) time.Duration {
 
 	t1 := time.Now()
 	fmt.Println("Function read | time: ", t1.Sub(t0))
-	return t1.Sub(t0)
+	channel <- t1.Sub(t0)
 }
 
 // openDifferentFiles - функция открытия файлов разных типов
-func openDifferentFiles(l int) time.Duration {
+func openDifferentFiles(l int, channel chan time.Duration) {
 	t0 := time.Now()
 
 	for i := 0; i < l; i++ {
@@ -125,21 +125,30 @@ func openDifferentFiles(l int) time.Duration {
 
 	t1 := time.Now()
 	fmt.Println("Function open | time: ", t1.Sub(t0))
-	return t1.Sub(t0)
+	channel <- t1.Sub(t0)
 }
 
-// outputFuncDifferentTurn - функция вывода времени выполнения функций в разной последовательностии генерации Excel файла
+// outputFuncDifferentTurn - функция вывода времени выполнения функций в разной последовательности
 func outputFuncDifferentTurn() {
 
 	var allTime time.Duration
+	channelPrint := make(chan time.Duration)
+	channelWrite := make(chan time.Duration)
+	channelRead := make(chan time.Duration)
+	channelOpen := make(chan time.Duration)
 
 	arrayTurn := []string{"P", "W", "R", "O"}
 	fmt.Println(arrayTurn)
 
-	allTime += printScreen(ITERATION_LOOP)
-	allTime += writeFile(ITERATION_LOOP)
-	allTime += readFile(ITERATION_LOOP)
-	allTime += openDifferentFiles(ITERATION_LOOP)
+	go printScreen(ITERATION_LOOP, channelPrint)
+	go writeFile(ITERATION_LOOP, channelWrite)
+	go readFile(ITERATION_LOOP, channelRead)
+	go openDifferentFiles(ITERATION_LOOP, channelOpen)
+
+	allTime += <-channelPrint
+	allTime += <-channelWrite
+	allTime += <-channelRead
+	allTime += <-channelOpen
 
 	fmt.Println("All time:", allTime)
 	fmt.Println("------------------------")
@@ -150,6 +159,11 @@ func outputFuncDifferentTurn() {
 	var sw [2]int
 	for p.Next(&sw) {
 
+		go printScreen(ITERATION_LOOP, channelPrint)
+		go writeFile(ITERATION_LOOP, channelWrite)
+		go readFile(ITERATION_LOOP, channelRead)
+		go openDifferentFiles(ITERATION_LOOP, channelOpen)
+
 		permute.SwapStrings(sw, arrayTurn)
 		fmt.Println(arrayTurn)
 
@@ -157,16 +171,16 @@ func outputFuncDifferentTurn() {
 			switch value {
 
 			case "P":
-				allTime += printScreen(ITERATION_LOOP)
+				allTime += <-channelPrint
 
 			case "W":
-				allTime += writeFile(ITERATION_LOOP)
+				allTime += <-channelWrite
 
 			case "R":
-				allTime += readFile(ITERATION_LOOP)
+				allTime += <-channelRead
 
 			case "O":
-				allTime += openDifferentFiles(ITERATION_LOOP)
+				allTime += <-channelOpen
 			}
 		}
 
@@ -177,7 +191,12 @@ func outputFuncDifferentTurn() {
 }
 
 func main() {
+	t0 := time.Now()
+
 	flag.Parse()
 
 	outputFuncDifferentTurn()
+
+	t1 := time.Now()
+	fmt.Println("----[", t1.Sub(t0), "]----")
 }
