@@ -177,7 +177,12 @@ func outputFuncDifferentTurn() {
 }
 
 func main() {
+	t0 := time.Now()
+
 	flag.Parse()
 
 	outputFuncDifferentTurn()
+
+	t1 := time.Now()
+	fmt.Println("----[", t1.Sub(t0), "]----")
 }
