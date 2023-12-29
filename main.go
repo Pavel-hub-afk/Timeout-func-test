@@ -289,9 +289,9 @@ func main() {
 	file := excelize.NewFile()
 
 	// Создание CSV файла и его записывателя
-	fileName := "secondary_start_" + runtime.GOOS + "_data.csv"
+	fileName := "intermedia_CSV_files/secondary_start_" + runtime.GOOS + "_data.csv"
 	if START_PROPERTY_FLAG == 0 {
-		fileName = "primary_start_" + runtime.GOOS + "_data.csv"
+		fileName = "intermedia_CSV_files/primary_start_" + runtime.GOOS + "_data.csv"
 	}
 
 	fileCSV, err := os.Create(fileName)
