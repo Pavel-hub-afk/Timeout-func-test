@@ -1,4 +1,4 @@
-// Тест времени выплнения функций в разной последовательности.
+// Тест времени выполнения функций в разной последовательности.
 
 package main
 
@@ -24,6 +24,13 @@ var START_PROPERTY_FLAG int = 1
 func init() {
 	flag.IntVar(&ITERATION_LOOP, "i", ITERATION_LOOP, "кол-во итераций цикла")
 	flag.IntVar(&START_PROPERTY_FLAG, "sp", START_PROPERTY_FLAG, "св-во старта")
+}
+
+// createFunc - функция создания функции для выполнения
+func createFunc(f func(int) time.Duration, name string) func() time.Duration {
+	return func() time.Duration {
+		return f(ITERATION_LOOP)
+	}
 }
 
 // printScreen - функция вывода на экран
@@ -74,11 +81,10 @@ func readFile(l int) time.Duration {
 		}
 
 		scan := bufio.NewScanner(file)
-		// TODO: почему-то пустое условие if
 		for scan.Scan() {
 			str := scan.Text()
 			if str == "" {
-
+				// Do nothing for empty lines
 			}
 		}
 
@@ -96,37 +102,16 @@ func readFile(l int) time.Duration {
 func openDifferentFiles(l int) time.Duration {
 	t0 := time.Now()
 
+	fileTypes := []string{"test.doc", "test.html", "test.txt", "test.jpg"}
 	for i := 0; i < l; i++ {
-		file, err := os.OpenFile("files/test.doc", os.O_RDONLY, 0744)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := file.Close(); err != nil {
-			log.Fatal(err)
-		}
-
-		file, err = os.OpenFile("files/test.html", os.O_RDONLY, 0744)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := file.Close(); err != nil {
-			log.Fatal(err)
-		}
-
-		file, err = os.OpenFile("files/test.txt", os.O_RDONLY, 0744)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := file.Close(); err != nil {
-			log.Fatal(err)
-		}
-
-		file, err = os.OpenFile("files/test.jpg", os.O_RDONLY, 0744)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := file.Close(); err != nil {
-			log.Fatal(err)
+		for _, fileType := range fileTypes {
+			file, err := os.OpenFile("files/"+fileType, os.O_RDONLY, 0744)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err := file.Close(); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 
@@ -137,42 +122,31 @@ func openDifferentFiles(l int) time.Duration {
 
 // outputFuncDifferentTurn - функция вывода времени выполнения функций в разной последовательностии, генерации Excel и CSV файлов
 func outputFuncDifferentTurn(writerCSV *csv.Writer) {
-	var funcTime time.Duration
 	var allTime time.Duration
-	var paradigmName string = "imperative"
+	var paradigmName string = "functional"
 
 	arrayTurn := []string{"P", "W", "R", "O"}
+	funcMap := map[string]func() time.Duration{
+		"P": createFunc(printScreen, "Вывод на экран"),
+		"W": createFunc(writeFile, "Запись в файл"),
+		"R": createFunc(readFile, "Чтение файла"),
+		"O": createFunc(openDifferentFiles, "Открытие файлов разного типа"),
+	}
 	fmt.Println(arrayTurn)
 
-	// Запись заколовка csv файла
+	// Запись заголовка csv файла
 	if err := writerCSV.Write([]string{"paradigm", "start_combination", "func", "time", "system", "start_property"}); err != nil {
 		panic(err)
 	}
 
 	// Начало последовательного выполнения функций
-	funcTime = printScreen(ITERATION_LOOP)
-	if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "P", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-		panic(err)
+	for _, funcKey := range arrayTurn {
+		funcTime := funcMap[funcKey]()
+		if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), funcKey, funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
+			panic(err)
+		}
+		allTime += funcTime
 	}
-	allTime += funcTime
-
-	funcTime = writeFile(ITERATION_LOOP)
-	if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "W", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-		panic(err)
-	}
-	allTime += funcTime
-
-	funcTime = readFile(ITERATION_LOOP)
-	if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "R", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-		panic(err)
-	}
-	allTime += funcTime
-
-	funcTime = openDifferentFiles(ITERATION_LOOP)
-	if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "O", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-		panic(err)
-	}
-	allTime += funcTime
 
 	fmt.Println("All time:", allTime)
 	fmt.Println("------------------------")
@@ -186,37 +160,12 @@ func outputFuncDifferentTurn(writerCSV *csv.Writer) {
 		permute.SwapStrings(sw, arrayTurn)
 		fmt.Println(arrayTurn)
 
-		for _, value := range arrayTurn {
-			switch value {
-
-			case "P":
-				funcTime = printScreen(ITERATION_LOOP)
-				if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "P", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-					panic(err)
-				}
-				allTime += funcTime
-
-			case "W":
-				funcTime = writeFile(ITERATION_LOOP)
-				if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "W", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-					panic(err)
-				}
-				allTime += funcTime
-
-			case "R":
-				funcTime = readFile(ITERATION_LOOP)
-				if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "R", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-					panic(err)
-				}
-				allTime += funcTime
-
-			case "O":
-				funcTime = openDifferentFiles(ITERATION_LOOP)
-				if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), "O", funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
-					panic(err)
-				}
-				allTime += funcTime
+		for _, funcKey := range arrayTurn {
+			funcTime := funcMap[funcKey]()
+			if err := writerCSV.Write([]string{paradigmName, strings.Join(arrayTurn, ","), funcKey, funcTime.String(), runtime.GOOS, strconv.Itoa(START_PROPERTY_FLAG)}); err != nil {
+				panic(err)
 			}
+			allTime += funcTime
 		}
 
 		fmt.Println("All time:", allTime)
@@ -230,9 +179,9 @@ func main() {
 	flag.Parse()
 
 	// Создание CSV файла и его записывателя
-	fileName := "intermedia_CSV_files/secondary_start_" + runtime.GOOS + "_data.csv"
+	fileName := "intermedia_CSV_files/functional_secondary_start_" + runtime.GOOS + "_data.csv"
 	if START_PROPERTY_FLAG == 0 {
-		fileName = "intermedia_CSV_files/primary_start_" + runtime.GOOS + "_data.csv"
+		fileName = "intermedia_CSV_files/functional_primary_start_" + runtime.GOOS + "_data.csv"
 	}
 
 	fileCSV, err := os.Create(fileName)
